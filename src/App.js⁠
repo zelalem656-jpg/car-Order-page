@@ -1,0 +1,175 @@
+import React, { useState } from 'react';
+
+export default function App() {
+  const [car] = useState({
+    name: 'Toyota RAV4 Hybrid 2024',
+    basePrice: 4800000,
+    color: 'Midnight Black',
+    image: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80'
+  });
+
+  const [selectedAddons, setSelectedAddons] = useState([]);
+  const [paymentMethod, setPaymentMethod] = useState('telebirr');
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const [formData, setFormData] = useState({
+    fullName: '',
+    phone: '',
+    address: '',
+    city: 'አዲስ አበባ'
+  });
+
+  const addonsList = [
+    { id: 'leather', name: 'የቆዳ ወንበር (Leather Seats)', price: 120000 },
+    { id: 'sunroof', name: 'ፓኖራሚክ ሰንሩፍ (Panoramic Sunroof)', price: 180000 },
+    { id: 'warranty', name: 'የ 3 ዓመት ዋስትና (Extended Warranty)', price: 250000 },
+    { id: 'delivery', name: 'እስከ ቤት ማድረሻ (Home Delivery)', price: 30000 },
+  ];
+
+  const toggleAddon = (id) => {
+    setSelectedAddons((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const addonsTotal = selectedAddons.reduce((sum, addonId) => {
+    const item = addonsList.find((a) => a.id === addonId);
+    return sum + (item ? item.price : 0);
+  }, 0);
+
+  const subtotal = car.basePrice + addonsTotal;
+  const vat = subtotal * 0.15;
+  const grandTotal = subtotal + vat;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setIsSubmitted(true);
+  };
+
+  if (isSubmitted) {
+    return (
+      <div style={{ maxWidth: '600px', margin: '40px auto', padding: '20px', fontFamily: 'sans-serif', textAlign: 'center', border: '1px solid #ddd', borderRadius: '12px' }}>
+        <h2 style={{ color: '#16a34a' }}>ትዕዛዝዎ በስኬት ተላክዋል!</h2>
+        <p>የትዕዛዝ ቁጥር፦ <strong>#ET-CAR-{(Math.random() * 89999 + 10000).toFixed(0)}</strong></p>
+        <div style={{ backgroundColor: '#f9fafb', padding: '15px', borderRadius: '8px', textAlign: 'left', margin: '20px 0' }}>
+          <p><strong>ስም፦</strong> {formData.fullName}</p>
+          <p><strong>ስልክ፦</strong> {formData.phone}</p>
+          <p><strong>መኪና፦</strong> {car.name}</p>
+          <p><strong>ጠቅላላ ክፍያ፦</strong> {grandTotal.toLocaleString()} ETB</p>
+          <p><strong>የክፍያ መንገድ፦</strong> {paymentMethod.toUpperCase()}</p>
+        </div>
+        <button onClick={() => setIsSubmitted(false)} style={{ backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer' }}>
+          ወደ ዋናው ገጽ ተመለስ
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ maxWidth: '900px', margin: '20px auto', padding: '15px', fontFamily: 'sans-serif' }}>
+      <h1 style={{ color: '#111827', borderBottom: '2px solid #eee', paddingBottom: '10px' }}>
+        🚗 የመኪና ማዘዣ እና የግዢ መፈጸሚያ
+      </h1>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
+        {/* Car Details */}
+        <div style={{ display: 'flex', gap: '15px', border: '1px solid #ddd', padding: '15px', borderRadius: '10px', alignItems: 'center' }}>
+          <img src={car.image} alt={car.name} style={{ width: '120px', height: '80px', objectFit: 'cover', borderRadius: '8px' }} />
+          <div>
+            <h3 style={{ margin: '0 0 5px 0' }}>{car.name}</h3>
+            <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>ከለር: {car.color}</p>
+            <p style={{ margin: '5px 0 0 0', color: '#2563eb', fontWeight: 'bold' }}>{car.basePrice.toLocaleString()} ETB</p>
+          </div>
+        </div>
+
+        {/* Addons */}
+        <div style={{ border: '1px solid #ddd', padding: '15px', borderRadius: '10px' }}>
+          <h3>ተጨማሪ አገልግሎቶች (Add-ons)</h3>
+          {addonsList.map((addon) => (
+            <label key={addon.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #eee', cursor: 'pointer' }}>
+              <div>
+                <input
+                  type="checkbox"
+                  checked={selectedAddons.includes(addon.id)}
+                  onChange={() => toggleAddon(addon.id)}
+                  style={{ marginRight: '10px' }}
+                />
+                {addon.name}
+              </div>
+              <strong>+{addon.price.toLocaleString()} ETB</strong>
+            </label>
+          ))}
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ border: '1px solid #ddd', padding: '15px', borderRadius: '10px' }}>
+          <h3>የገዢው መረጃ</h3>
+          <div style={{ marginBottom: '10px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>ሙሉ ስም</label>
+            <input
+              type="text"
+              required
+              placeholder="አበበ በቀለ"
+              value={formData.fullName}
+              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+              style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '5px', border: '1px solid #ccc' }}
+            />
+          </div>
+
+          <div style={{ marginBottom: '10px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>ስልክ ቁጥር</label>
+            <input
+              type="tel"
+              required
+              placeholder="0911..."
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '5px', border: '1px solid #ccc' }}
+            />
+          </div>
+
+          <div style={{ marginBottom: '10px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>አድራሻ / ቦታ</label>
+            <input
+              type="text"
+              required
+              placeholder="አዲስ አበባ፣ ቦሌ"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '5px', border: '1px solid #ccc' }}
+            />
+          </div>
+
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>የክፍያ መንገድ</label>
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              style={{ width: '100%', padding: '8px', borderRadius: '5px', border: '1px solid #ccc' }}
+            >
+              <option value="telebirr">Telebirr</option>
+              <option value="cbebirr">CBE Birr</option>
+              <option value="bank">Bank Transfer</option>
+            </select>
+          </div>
+
+          {/* Summary */}
+          <div style={{ backgroundColor: '#1f2937', color: '#fff', padding: '15px', borderRadius: '8px', marginBottom: '15px' }}>
+            <p style={{ margin: '5px 0' }}>መኪና፡ {car.basePrice.toLocaleString()} ETB</p>
+            <p style={{ margin: '5px 0' }}>ተጨማሪዎች፡ +{addonsTotal.toLocaleString()} ETB</p>
+            <p style={{ margin: '5px 0' }}>ታክስ (15% VAT)፡ +{vat.toLocaleString()} ETB</p>
+            <hr style={{ borderColor: '#374151' }} />
+            <h3 style={{ margin: '5px 0', color: '#60a5fa' }}>ጠቅላላ፡ {grandTotal.toLocaleString()} ETB</h3>
+          </div>
+
+          <button
+            type="submit"
+            style={{ width: '100%', backgroundColor: '#2563eb', color: '#fff', padding: '12px', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}
+          >
+            ትዕዛዝ አረጋግጥ
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
