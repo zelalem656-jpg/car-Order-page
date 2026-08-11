@@ -1,175 +1,103 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_URL = 'https://aroossifftxwrmckyfdlv.supabase.co';
+const SUPABASE_KEY = 'Sb_publishable_LFFfD_vYbQltG7UeynOxCg_lgvDTvyn';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 export default function App() {
-  const [car] = useState({
-    name: 'Toyota RAV4 Hybrid 2024',
-    basePrice: 4800000,
-    color: 'Midnight Black',
-    image: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80'
-  });
+  const [cars, setCars] = useState([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [newCar, setNewCar] = useState({ name: '', price: '', color: '', image: '', video_url: '' });
 
-  const [selectedAddons, setSelectedAddons] = useState([]);
-  const [paymentMethod, setPaymentMethod] = useState('telebirr');
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  useEffect(() => {
+    fetchCars();
+  }, []);
 
-  const [formData, setFormData] = useState({
-    fullName: '',
-    phone: '',
-    address: '',
-    city: 'አዲስ አበባ'
-  });
-
-  const addonsList = [
-    { id: 'leather', name: 'የቆዳ ወንበር (Leather Seats)', price: 120000 },
-    { id: 'sunroof', name: 'ፓኖራሚክ ሰንሩፍ (Panoramic Sunroof)', price: 180000 },
-    { id: 'warranty', name: 'የ 3 ዓመት ዋስትና (Extended Warranty)', price: 250000 },
-    { id: 'delivery', name: 'እስከ ቤት ማድረሻ (Home Delivery)', price: 30000 },
-  ];
-
-  const toggleAddon = (id) => {
-    setSelectedAddons((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+  const fetchCars = async () => {
+    const { data } = await supabase.from('cars').select('*').order('id', { ascending: false });
+    if (data) setCars(data);
   };
 
-  const addonsTotal = selectedAddons.reduce((sum, addonId) => {
-    const item = addonsList.find((a) => a.id === addonId);
-    return sum + (item ? item.price : 0);
-  }, 0);
-
-  const subtotal = car.basePrice + addonsTotal;
-  const vat = subtotal * 0.15;
-  const grandTotal = subtotal + vat;
-
-  const handleSubmit = (e) => {
+  const handleAddCar = async (e) => {
     e.preventDefault();
-    setIsSubmitted(true);
+    if (!newCar.name || !newCar.price) return alert('እባክዎን ስም እና ዋጋ ያስገቡ');
+    
+    const { error } = await supabase.from('cars').insert([
+      { ...newCar, price: parseFloat(newCar.price) }
+    ]);
+
+    if (!error) {
+      alert('መኪናው በስኬት ተጨምሯል!');
+      setNewCar({ name: '', price: '', color: '', image: '', video_url: '' });
+      fetchCars();
+    } else {
+      alert('ስህተት ተፈጥሯል: ' + error.message);
+    }
   };
 
-  if (isSubmitted) {
-    return (
-      <div style={{ maxWidth: '600px', margin: '40px auto', padding: '20px', fontFamily: 'sans-serif', textAlign: 'center', border: '1px solid #ddd', borderRadius: '12px' }}>
-        <h2 style={{ color: '#16a34a' }}>ትዕዛዝዎ በስኬት ተላክዋል!</h2>
-        <p>የትዕዛዝ ቁጥር፦ <strong>#ET-CAR-{(Math.random() * 89999 + 10000).toFixed(0)}</strong></p>
-        <div style={{ backgroundColor: '#f9fafb', padding: '15px', borderRadius: '8px', textAlign: 'left', margin: '20px 0' }}>
-          <p><strong>ስም፦</strong> {formData.fullName}</p>
-          <p><strong>ስልክ፦</strong> {formData.phone}</p>
-          <p><strong>መኪና፦</strong> {car.name}</p>
-          <p><strong>ጠቅላላ ክፍያ፦</strong> {grandTotal.toLocaleString()} ETB</p>
-          <p><strong>የክፍያ መንገድ፦</strong> {paymentMethod.toUpperCase()}</p>
-        </div>
-        <button onClick={() => setIsSubmitted(false)} style={{ backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer' }}>
-          ወደ ዋናው ገጽ ተመለስ
-        </button>
-      </div>
-    );
-  }
+  const handleDeleteCar = async (id) => {
+    if (window.confirm('መኪናውን ማጥፋት እርግጠኛ ነዎት?')) {
+      await supabase.from('cars').delete().eq('id', id);
+      fetchCars();
+    }
+  };
 
   return (
-    <div style={{ maxWidth: '900px', margin: '20px auto', padding: '15px', fontFamily: 'sans-serif' }}>
-      <h1 style={{ color: '#111827', borderBottom: '2px solid #eee', paddingBottom: '10px' }}>
-        🚗 የመኪና ማዘዣ እና የግዢ መፈጸሚያ
-      </h1>
+    <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #ddd', paddingBottom: '10px' }}>
+        <h2>🚗 East Africa Cars Catalog</h2>
+        <button 
+          onClick={() => setIsAdmin(!isAdmin)} 
+          style={{ padding: '8px 15px', backgroundColor: '#333', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+        >
+          {isAdmin ? 'ወደ ገዢዎች ገጽ' : 'Admin Panel'}
+        </button>
+      </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
-        {/* Car Details */}
-        <div style={{ display: 'flex', gap: '15px', border: '1px solid #ddd', padding: '15px', borderRadius: '10px', alignItems: 'center' }}>
-          <img src={car.image} alt={car.name} style={{ width: '120px', height: '80px', objectFit: 'cover', borderRadius: '8px' }} />
-          <div>
-            <h3 style={{ margin: '0 0 5px 0' }}>{car.name}</h3>
-            <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>ከለር: {car.color}</p>
-            <p style={{ margin: '5px 0 0 0', color: '#2563eb', fontWeight: 'bold' }}>{car.basePrice.toLocaleString()} ETB</p>
-          </div>
-        </div>
+      {isAdmin ? (
+        <div style={{ marginTop: '20px', padding: '20px', border: '1px solid #2563eb', borderRadius: '8px', backgroundColor: '#f0f9ff' }}>
+          <h3>🔧 አድሚን ዳሽቦርድ - አዲስ መኪና መዝግብ</h3>
+          <form onSubmit={handleAddCar} style={{ display: 'grid', gap: '10px', maxWidth: '500px' }}>
+            <input placeholder="የመኪና ስም (ምሳሌ፡ Toyota RAV4)" value={newCar.name} onChange={e => setNewCar({...newCar, name: e.target.value})} style={{ padding: '8px' }} />
+            <input type="number" placeholder="ዋጋ በ ብር (ምሳሌ፡ 4500000)" value={newCar.price} onChange={e => setNewCar({...newCar, price: e.target.value})} style={{ padding: '8px' }} />
+            <input placeholder="ከለር" value={newCar.color} onChange={e => setNewCar({...newCar, color: e.target.value})} style={{ padding: '8px' }} />
+            <input placeholder="የምስል (Image) Link URL" value={newCar.image} onChange={e => setNewCar({...newCar, image: e.target.value})} style={{ padding: '8px' }} />
+            <input placeholder="የቪዲዮ (Video) Link URL" value={newCar.video_url} onChange={e => setNewCar({...newCar, video_url: e.target.value})} style={{ padding: '8px' }} />
+            <button type="submit" style={{ padding: '10px', backgroundColor: '#16a34a', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold' }}>+ መኪና መዝግብ</button>
+          </form>
 
-        {/* Addons */}
-        <div style={{ border: '1px solid #ddd', padding: '15px', borderRadius: '10px' }}>
-          <h3>ተጨማሪ አገልግሎቶች (Add-ons)</h3>
-          {addonsList.map((addon) => (
-            <label key={addon.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #eee', cursor: 'pointer' }}>
-              <div>
-                <input
-                  type="checkbox"
-                  checked={selectedAddons.includes(addon.id)}
-                  onChange={() => toggleAddon(addon.id)}
-                  style={{ marginRight: '10px' }}
-                />
-                {addon.name}
-              </div>
-              <strong>+{addon.price.toLocaleString()} ETB</strong>
-            </label>
+          <h4 style={{ marginTop: '30px' }}>የተመዘገቡ መኪኖች ማስተካከያ</h4>
+          {cars.map(car => (
+            <div key={car.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderBottom: '1px solid #ccc' }}>
+              <span>{car.name} - {car.price?.toLocaleString()} ETB</span>
+              <button onClick={() => handleDeleteCar(car.id)} style={{ backgroundColor: '#dc2626', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '3px' }}>አጥፋ</button>
+            </div>
           ))}
         </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} style={{ border: '1px solid #ddd', padding: '15px', borderRadius: '10px' }}>
-          <h3>የገዢው መረጃ</h3>
-          <div style={{ marginBottom: '10px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>ሙሉ ስም</label>
-            <input
-              type="text"
-              required
-              placeholder="አበበ በቀለ"
-              value={formData.fullName}
-              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-              style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '5px', border: '1px solid #ccc' }}
-            />
+      ) : (
+        <div style={{ marginTop: '20px' }}>
+          <h3>የሚሸጡ መኪኖች ({cars.length})</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+            {cars.map(car => (
+              <div key={car.id} style={{ border: '1px solid #eee', borderRadius: '10px', overflow: 'hidden', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
+                {car.image && <img src={car.image} alt={car.name} style={{ width: '100%', height: '180px', objectFit: 'cover' }} />}
+                <div style={{ padding: '15px' }}>
+                  <h4 style={{ margin: '0 0 10px 0' }}>{car.name}</h4>
+                  <p style={{ margin: '5px 0', color: '#666' }}>ከለር፡ {car.color || 'ያልተገለፀ'}</p>
+                  <p style={{ margin: '5px 0', fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>{car.price?.toLocaleString()} ETB</p>
+                  {car.video_url && (
+                    <a href={car.video_url} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: '5px', color: '#dc2626', fontSize: '14px' }}>
+                      ▶ ቪዲዮ ይመልከቱ
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
-
-          <div style={{ marginBottom: '10px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>ስልክ ቁጥር</label>
-            <input
-              type="tel"
-              required
-              placeholder="0911..."
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '5px', border: '1px solid #ccc' }}
-            />
-          </div>
-
-          <div style={{ marginBottom: '10px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>አድራሻ / ቦታ</label>
-            <input
-              type="text"
-              required
-              placeholder="አዲስ አበባ፣ ቦሌ"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '5px', border: '1px solid #ccc' }}
-            />
-          </div>
-
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>የክፍያ መንገድ</label>
-            <select
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-              style={{ width: '100%', padding: '8px', borderRadius: '5px', border: '1px solid #ccc' }}
-            >
-              <option value="telebirr">Telebirr</option>
-              <option value="cbebirr">CBE Birr</option>
-              <option value="bank">Bank Transfer</option>
-            </select>
-          </div>
-
-          {/* Summary */}
-          <div style={{ backgroundColor: '#1f2937', color: '#fff', padding: '15px', borderRadius: '8px', marginBottom: '15px' }}>
-            <p style={{ margin: '5px 0' }}>መኪና፡ {car.basePrice.toLocaleString()} ETB</p>
-            <p style={{ margin: '5px 0' }}>ተጨማሪዎች፡ +{addonsTotal.toLocaleString()} ETB</p>
-            <p style={{ margin: '5px 0' }}>ታክስ (15% VAT)፡ +{vat.toLocaleString()} ETB</p>
-            <hr style={{ borderColor: '#374151' }} />
-            <h3 style={{ margin: '5px 0', color: '#60a5fa' }}>ጠቅላላ፡ {grandTotal.toLocaleString()} ETB</h3>
-          </div>
-
-          <button
-            type="submit"
-            style={{ width: '100%', backgroundColor: '#2563eb', color: '#fff', padding: '12px', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}
-          >
-            ትዕዛዝ አረጋግጥ
-          </button>
-        </form>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
