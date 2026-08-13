@@ -1,103 +1,105 @@
-import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import React, { useState } from 'react';
 
-const SUPABASE_URL = 'https://aroossifftxwrmckyfdlv.supabase.co';
-const SUPABASE_KEY = 'Sb_publishable_LFFfD_vYbQltG7UeynOxCg_lgvDTvyn';
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const vehicles = [
+  { id: 1, name: '2025 ኤሌክትሪክ መኪና (EV)', price: 2500000 },
+  { id: 2, name: 'Toyota HiRoof Van', price: 4200000 },
+  { id: 3, name: 'Wuling Electric Van', price: 1800000 },
+  { id: 4, name: 'Boxer Motorbike', price: 250000 },
+  { id: 5, name: 'Hapapach / Saykl Motor', price: 180000 },
+];
 
 export default function App() {
-  const [cars, setCars] = useState([]);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [newCar, setNewCar] = useState({ name: '', price: '', color: '', image: '', video_url: '' });
+  const [selectedVehicle, setSelectedVehicle] = useState(vehicles[0]);
 
-  useEffect(() => {
-    fetchCars();
-  }, []);
-
-  const fetchCars = async () => {
-    const { data } = await supabase.from('cars').select('*').order('id', { ascending: false });
-    if (data) setCars(data);
-  };
-
-  const handleAddCar = async (e) => {
-    e.preventDefault();
-    if (!newCar.name || !newCar.price) return alert('እባክዎን ስም እና ዋጋ ያስገቡ');
-    
-    const { error } = await supabase.from('cars').insert([
-      { ...newCar, price: parseFloat(newCar.price) }
-    ]);
-
-    if (!error) {
-      alert('መኪናው በስኬት ተጨምሯል!');
-      setNewCar({ name: '', price: '', color: '', image: '', video_url: '' });
-      fetchCars();
-    } else {
-      alert('ስህተት ተፈጥሯል: ' + error.message);
-    }
-  };
-
-  const handleDeleteCar = async (id) => {
-    if (window.confirm('መኪናውን ማጥፋት እርግጠኛ ነዎት?')) {
-      await supabase.from('cars').delete().eq('id', id);
-      fetchCars();
-    }
-  };
+  const downPayment = selectedVehicle.price * 0.2;
+  const bankLoan = selectedVehicle.price - downPayment;
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #ddd', paddingBottom: '10px' }}>
-        <h2>🚗 East Africa Cars Catalog</h2>
-        <button 
-          onClick={() => setIsAdmin(!isAdmin)} 
-          style={{ padding: '8px 15px', backgroundColor: '#333', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
-        >
-          {isAdmin ? 'ወደ ገዢዎች ገጽ' : 'Admin Panel'}
-        </button>
-      </div>
+    <div className="min-h-screen bg-gray-100 p-4 md:p-8 font-sans">
+      <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden grid grid-cols-1 md:grid-cols-2">
+        
+        {/* የግራ ጎን - የተሽከርካሪ መረጃ */}
+        <div className="p-6 md:p-8 bg-gray-50 flex flex-col justify-between">
+          <div>
+            <span className="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full">
+              ጅግጅጋ - ሶማሌ ክልል | 🚚 ማድረስ እንችላለን
+            </span>
+            <h2 className="text-2xl font-bold text-gray-800 mt-4 mb-4">የተሽከርካሪ ማዘዣ</h2>
 
-      {isAdmin ? (
-        <div style={{ marginTop: '20px', padding: '20px', border: '1px solid #2563eb', borderRadius: '8px', backgroundColor: '#f0f9ff' }}>
-          <h3>🔧 አድሚን ዳሽቦርድ - አዲስ መኪና መዝግብ</h3>
-          <form onSubmit={handleAddCar} style={{ display: 'grid', gap: '10px', maxWidth: '500px' }}>
-            <input placeholder="የመኪና ስም (ምሳሌ፡ Toyota RAV4)" value={newCar.name} onChange={e => setNewCar({...newCar, name: e.target.value})} style={{ padding: '8px' }} />
-            <input type="number" placeholder="ዋጋ በ ብር (ምሳሌ፡ 4500000)" value={newCar.price} onChange={e => setNewCar({...newCar, price: e.target.value})} style={{ padding: '8px' }} />
-            <input placeholder="ከለር" value={newCar.color} onChange={e => setNewCar({...newCar, color: e.target.value})} style={{ padding: '8px' }} />
-            <input placeholder="የምስል (Image) Link URL" value={newCar.image} onChange={e => setNewCar({...newCar, image: e.target.value})} style={{ padding: '8px' }} />
-            <input placeholder="የቪዲዮ (Video) Link URL" value={newCar.video_url} onChange={e => setNewCar({...newCar, video_url: e.target.value})} style={{ padding: '8px' }} />
-            <button type="submit" style={{ padding: '10px', backgroundColor: '#16a34a', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold' }}>+ መኪና መዝግብ</button>
-          </form>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              የሚፈልጉትን ተሽከርካሪ ይምረጡ
+            </label>
+            <select 
+              className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 mb-6 bg-white"
+              value={selectedVehicle.id}
+              onChange={(e) => {
+                const vehicle = vehicles.find(v => v.id === parseInt(e.target.value));
+                setSelectedVehicle(vehicle);
+              }}
+            >
+              {vehicles.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name} - {v.price.toLocaleString()} ብር
+                </option>
+              ))}
+            </select>
 
-          <h4 style={{ marginTop: '30px' }}>የተመዘገቡ መኪኖች ማስተካከያ</h4>
-          {cars.map(car => (
-            <div key={car.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderBottom: '1px solid #ccc' }}>
-              <span>{car.name} - {car.price?.toLocaleString()} ETB</span>
-              <button onClick={() => handleDeleteCar(car.id)} style={{ backgroundColor: '#dc2626', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '3px' }}>አጥፋ</button>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div style={{ marginTop: '20px' }}>
-          <h3>የሚሸጡ መኪኖች ({cars.length})</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-            {cars.map(car => (
-              <div key={car.id} style={{ border: '1px solid #eee', borderRadius: '10px', overflow: 'hidden', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
-                {car.image && <img src={car.image} alt={car.name} style={{ width: '100%', height: '180px', objectFit: 'cover' }} />}
-                <div style={{ padding: '15px' }}>
-                  <h4 style={{ margin: '0 0 10px 0' }}>{car.name}</h4>
-                  <p style={{ margin: '5px 0', color: '#666' }}>ከለር፡ {car.color || 'ያልተገለፀ'}</p>
-                  <p style={{ margin: '5px 0', fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>{car.price?.toLocaleString()} ETB</p>
-                  {car.video_url && (
-                    <a href={car.video_url} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: '5px', color: '#dc2626', fontSize: '14px' }}>
-                      ▶ ቪዲዮ ይመልከቱ
-                    </a>
-                  )}
-                </div>
+            {/* የዋጋ ስሌት */}
+            <div className="bg-white p-4 rounded-xl border border-gray-200 space-y-3">
+              <div className="flex justify-between text-gray-600">
+                <span>ጠቅላላ ዋጋ፡</span>
+                <span className="font-bold text-gray-800">{selectedVehicle.price.toLocaleString()} ብር</span>
               </div>
-            ))}
+              <div className="flex justify-between text-gray-600">
+                <span>ቅድመ ክፍያ (20%)፡</span>
+                <span className="font-semibold text-blue-600">{downPayment.toLocaleString()} ብር</span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>በባንክ ብድር (80%)፡</span>
+                <span className="font-semibold text-green-600">{bankLoan.toLocaleString()} ብር</span>
+              </div>
+            </div>
           </div>
+
+          <p className="text-xs text-gray-400 mt-6">* የባንክ ብድር ሂደቶች እንደ ባንኩ ደንብ ይተገበራሉ።</p>
         </div>
-      )}
+
+        {/* የቀኝ ጎን - የክፍያ ፎርም */}
+        <div className="p-6 md:p-8">
+          <h3 class="text-xl font-bold text-gray-800 mb-4">የደንበኛ መረጃ እና ክፍያ</h3>
+          <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">ሙሉ ስም</label>
+              <input type="text" placeholder="አበበ በላቸው" required className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">ስልክ ቁጥር</label>
+              <input type="tel" placeholder="0911223344" required className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">የሚረከቡበት ቦታ/ከተማ</label>
+              <input type="text" placeholder="ለምሳሌ፡ ጅግጅጋ፣ አዲስ አበባ..." required className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">የቅድመ ክፍያ መንገድ</label>
+              <select className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                <option>Telebirr (ቴሌብር)</option>
+                <option>CBE Birr (የኢትዮጵያ ንግድ ባንክ)</option>
+                <option>CBE Direct Bank Transfer</option>
+                <option>Awash Bank / Hibret Bank</option>
+              </select>
+            </div>
+
+            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200 mt-2">
+              ትዕዛዙን አረጋግጥ (ቅድመ ክፍያ ፈጽም)
+            </button>
+          </form>
+        </div>
+
+      </div>
     </div>
   );
 }
