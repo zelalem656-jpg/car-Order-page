@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>የተሽከርካሪ ማዘዣ እና ማኔጅመንት</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f1f5f9; margin: 0; padding: 16px; color: #334155; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); padding: 24px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 10px; }
+        .badge { background: #dcfce7; color: #15803d; font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 20px; }
+        .btn-admin { background: #0f172a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        
+        .grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+        @media(min-width: 768px) { .grid { grid-template-columns: 1fr 1fr; } }
+        
+        label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; color: #475569; }
+        select, input { width: 100%; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; font-size: 15px; box-sizing: border-box; margin-bottom: 16px; outline: none; background: #fff; }
+        select:focus, input:focus { border-color: #2563eb; ring: 2px #bfdbfe; }
+
+        .price-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+        .price-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 15px; }
+        .total-row { border-top: 1px solid #e2e8f0; padding-top: 10px; font-weight: bold; font-size: 16px; }
+
+        .btn-submit { width: 100%; background: #2563eb; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .btn-add { background: #16a34a; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 14px; }
+        th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
+        th { background: #f1f5f9; }
+        .btn-danger { background: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+        .admin-panel { background: #fff1f2; border: 1px solid #fecdd3; padding: 20px; border-radius: 12px; margin-top: 24px; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div>
+                <span class="badge">ጅግጅጋ - ሶማሌ ክልል | 🚚 ማድረስ እንችላለን</span>
+                <h1 style="font-size: 24px; margin: 8px 0 0 0; color: #0f172a;">የተሽከርካሪ ማዘዣ እና ክፍያ ገጽ</h1>
+            </div>
+            <button class="btn-admin" onclick="toggleAdmin()">🔑 የአድሚን ገጽ (መኪና መጨመሪያ)</button>
+        </div>
+
+        <!-- 🚗 የደንበኛ ገጽ -->
+        <div class="grid">
+            <div>
+                <h2>1. መኪና ይምረጡ</h2>
+                <label>የሚፈልጉትን ተሽከርካሪ ይምረጡ፡</label>
+                <select id="vehicleSelect" onchange="renderPrice()"></select>
+
+                <div class="price-box">
+                    <div class="price-row">
+                        <span>ጠቅላላ ዋጋ፡</span>
+                        <span id="totalPrice" style="font-weight: bold;">0 ብር</span>
+                    </div>
+                    <div class="price-row">
+                        <span>ቅድመ ክፍያ (20%)፡</span>
+                        <span id="downPayment" style="color: #2563eb; font-weight: 600;">0 ብር</span>
+                    </div>
+                    <div class="price-row total-row">
+                        <span>በባንክ ብድር (80%)፡</span>
+                        <span id="bankLoan" style="color: #16a34a; font-weight: 600;">0 ብር</span>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h2>2. የደንበኛ መረጃ እና ክፍያ</h2>
+                <form onsubmit="event.preventDefault(); alert('ትዕዛዝዎ በተሳካ ሁኔታ ተመዝግቧል!');">
+                    <div>
+                        <label>ሙሉ ስም</label>
+                        <input type="text" placeholder="አበበ በላቸው" required>
+                    </div>
+                    <div>
+                        <label>ስልክ ቁጥር</label>
+                        <input type="tel" placeholder="0911223344" required>
+                    </div>
+                    <div>
+                        <label>የሚረከቡበት ቦታ/ከተማ</label>
+                        <input type="text" placeholder="ለምሳሌ፡ ጅግጅጋ፣ አዲስ አበባ..." required>
+                    </div>
+                    <div>
+                        <label>የቅድመ ክፍያ መንገድ</label>
+                        <select>
+                            <option>Telebirr (ቴሌብር)</option>
+                            <option>CBE Birr (የኢትዮጵያ ንግድ ባንክ)</option>
+                            <option>CBE Direct Bank Transfer</option>
+                            <option>Awash Bank / Hibret Bank</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-submit">ትዕዛዙን አረጋግጥ (ቅድመ ክፍያ ፈጽም)</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ⚙️ የአድሚን ገጽ (አዲስ መኪና መጨመሪያ እና ማጥፊያ) -->
+        <div id="adminPanel" class="admin-panel">
+            <h2 style="color: #9f1239; margin-top: 0;">⚙️ የአድሚን ፓነል - መኪኖችን ማስተካከያ</h2>
+            
+            <form onsubmit="addVehicle(event)">
+                <label>የመኪና ስም</label>
+                <input type="text" id="newName" placeholder="ለምሳሌ: Suzuki Dzire 2024" required>
+                
+                <label>ዋጋ (በብር)</label>
+                <input type="number" id="newPrice" placeholder="ለምሳሌ: 3500000" required>
+                
+                <button type="submit" class="btn-add">➕ አዲስ መኪና ጨምር</button>
+            </form>
+
+            <h3>የመኪኖች ዝርዝር Table</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>የመኪና ስም</th>
+                        <th>ዋጋ (ብር)</th>
+                        <th>እርምጃ</th>
+                    </tr>
+                </thead>
+                <tbody id="vehicleTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // በኮድ የተዘጋጁ ብዙ የመኪና ዓይነቶች
+        let vehicles = [
+            { id: 1, name: '2025 ኤሌክትሪክ መኪና (EV)', price: 2500000 },
+            { id: 2, name: 'Toyota HiRoof Van', price: 4200000 },
+            { id: 3, name: 'Wuling Electric Van', price: 1800000 },
+            { id: 4, name: 'Boxer Motorbike', price: 250000 },
+            { id: 5, name: 'Hapapach / Saykl Motor', price: 180000 },
+            { id: 6, name: 'Toyota RAV4 Hybrid 2024', price: 4800000 },
+            { id: 7, name: 'Suzuki Swift 2023', price: 2100000 }
+        ];
+
+        function loadVehicles() {
+            const select = document.getElementById('vehicleSelect');
+            const table = document.getElementById('vehicleTable');
+            select.innerHTML = '';
+            table.innerHTML = '';
+
+            vehicles.forEach((v, index) => {
+                // መምረጫው ውስጥ መጨመር
+                const option = document.createElement('option');
+                option.value = v.price;
+                option.textContent = `${v.name} - ${v.price.toLocaleString()} ብር`;
+                select.appendChild(option);
+
+                // Table ውስጥ መጨመር
+                const row = `<tr>
+                    <td>${v.name}</td>
+                    <td>${v.price.toLocaleString()} ብር</td>
+                    <td><button class="btn-danger" onclick="deleteVehicle(${index})">🗑️ አጥፋ</button></td>
+                </tr>`;
+                table.innerHTML += row;
+            });
+
+            renderPrice();
+        }
+
+        function renderPrice() {
+            const select = document.getElementById('vehicleSelect');
+            const price = parseFloat(select.value) || 0;
+            const down = price * 0.20;
+            const loan = price - down;
+
+            document.getElementById('totalPrice').innerText = price.toLocaleString() + ' ብር';
+            document.getElementById('downPayment').innerText = down.toLocaleString() + ' ብር';
+            document.getElementById('bankLoan').innerText = loan.toLocaleString() + ' ብር';
+        }
+
+        function toggleAdmin() {
+            const panel = document.getElementById('adminPanel');
+            panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function addVehicle(e) {
+            e.preventDefault();
+            const name = document.getElementById('newName').value;
+            const price = parseFloat(document.getElementById('newPrice').value);
+
+            vehicles.push({ id: Date.now(), name, price });
+            document.getElementById('newName').value = '';
+            document.getElementById('newPrice').value = '';
+            
+            loadVehicles();
+            alert('መኪናው በተሳካ ሁኔታ ተጨምሯል!');
+        }
+
+        function deleteVehicle(index) {
+            if(confirm('በእርግጥ ይህንን መኪና ማጥፋት ይፈልጋሉ?')) {
+                vehicles.splice(index, 1);
+                loadVehicles();
+            }
+        }
+
+        // ገጹ ሲከፈት መኪኖቹን ሎድ ያድርግ
+        loadVehicles();
+    </script>
+</body>
+</html>
