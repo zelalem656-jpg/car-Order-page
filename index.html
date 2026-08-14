@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>East Africa Motors - Multi Table Management System</title>
+    <style>
+        :root {
+            --bf-orange: #f26522;
+            --bf-dark: #1e293b;
+            --bf-bg: #f8fafc;
+            --bf-border: #e2e8f0;
+            --success: #16a34a;
+            --danger: #dc2626;
+        }
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 0; background: var(--bf-bg); color: #334155; padding-top: 55px; }
+        
+        /* 1. Header */
+        .header { position: fixed; top: 0; width: 100%; height: 55px; background: var(--bf-dark); display: flex; align-items: center; justify-content: space-between; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .logo { color: var(--bf-orange); font-size: 17px; font-weight: 900; font-style: italic; padding-left: 15px; }
+        .nav-btn { background: none; border: none; color: white; padding: 10px 15px; font-size: 13px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 15px; }
+
+        /* 2. Customer View (Be Forward Style) */
+        .search-card { background: white; padding: 15px; border-radius: 8px; border: 1px solid var(--bf-border); margin-bottom: 15px; }
+        .search-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        select, input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; box-sizing: border-box; background: white; outline: none; }
+        
+        .car-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .car-card { background: white; border: 1px solid var(--bf-border); border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.04); display: flex; flex-direction: column; justify-content: space-between; }
+        .car-img { width: 100%; height: 120px; object-fit: cover; background: #eee; }
+        .car-info { padding: 8px; }
+        .car-name { font-size: 13px; font-weight: bold; margin: 0 0 4px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--bf-dark); }
+        .car-price { font-size: 15px; font-weight: 800; color: var(--bf-orange); margin-bottom: 6px; }
+        .btn-inquire { width: 100%; background: var(--bf-dark); color: white; border: none; padding: 8px; border-radius: 4px; font-weight: bold; font-size: 12px; cursor: pointer; }
+
+        /* 3. Admin Panel & Multiple Tables */
+        .admin-view { display: none; background: white; border-radius: 8px; padding: 15px; border: 1px solid var(--bf-border); }
+        .tab-menu { display: flex; border-bottom: 2px solid var(--bf-border); margin-bottom: 15px; gap: 5px; overflow-x: auto; }
+        .tab-btn { padding: 10px 14px; border: none; background: none; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; font-size: 13px; }
+        .tab-btn.active { color: var(--bf-orange); border-color: var(--bf-orange); }
+        
+        .table-wrapper { overflow-x: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 500px; }
+        th, td { border: 1px solid var(--bf-border); padding: 10px 8px; text-align: left; }
+        th { background: #f1f5f9; color: var(--bf-dark); }
+
+        .badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block; }
+        .badge-pending { background: #fef08a; color: #854d0e; }
+        .badge-approved { background: #dcfce7; color: #166534; }
+        
+        .btn-action { padding: 5px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; }
+        .btn-del { background: #fee2e2; color: var(--danger); }
+        .btn-status { background: #e0f2fe; color: #0369a1; }
+
+        /* 4. Modals */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 200; display: none; align-items: center; justify-content: center; padding: 15px; box-sizing: border-box; }
+        .modal-box { background: white; padding: 20px; border-radius: 8px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">🚗 EAST AFRICA MOTORS</div>
+        <button class="nav-btn" onclick="toggleView()" id="toggleViewBtn">🔑 የአድሚን ገጽ</button>
+    </div>
+
+    <div class="container">
+
+        <!-- ============================================== -->
+        <!-- 🚗 CUSTOMER VIEW (የደንበኞች ገጽ) -->
+        <!-- ============================================== -->
+        <div id="customerView">
+            <!-- Search & Filters -->
+            <div class="search-card">
+                <input type="text" id="custSearch" placeholder="🔍 መኪና በስም ይፈልጉ..." onkeyup="filterStock()" style="margin-bottom: 8px;">
+                <div class="search-grid">
+                    <select id="custType" onchange="filterStock()">
+                        <option value="">ሁሉም ዓይነት (Type)</option>
+                        <option value="SUV">SUV / Jeep</option>
+                        <option value="Sedan">Sedan</option>
+                        <option value="Van">Van / HiRoof</option>
+                        <option value="EV">Electric (EV)</option>
+                    </select>
+                    <select id="custPrice" onchange="filterStock()">
+                        <option value="">ሁሉም ዋጋ</option>
+                        <option value="3000000">እስከ 3 ሚሊዮን ብር</option>
+                        <option value="5000000">እስከ 5 ሚሊዮን ብር</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Car Stock List -->
+            <h3 style="margin: 15px 0 10px 0;">የተሽከርካሪዎች ዝርዝር (Stock List)</h3>
+            <div class="car-grid" id="stockGrid"></div>
+        </div>
+
+
+        <!-- ============================================== -->
+        <!-- ⚙️ ADMIN PANEL WITH MULTIPLE TABLES -->
+        <!-- ============================================== -->
+        <div id="adminView" class="admin-view">
+            <h2 style="margin-top: 0; color: var(--bf-dark);">⚙️ የአድሚን ዳሽቦርድ (Admin Management)</h2>
+            
+            <!-- Table Switcher Tabs -->
+            <div class="tab-menu">
+                <button class="tab-btn active" onclick="switchTab('carsTab')">🚗 Table 1: መኪኖች (Stock)</button>
+                <button class="tab-btn" onclick="switchTab('ordersTab')">📋 Table 2: የገቡ ትዕዛዞች (Orders)</button>
+                <button class="tab-btn" onclick="switchTab('analyticsTab')">📊 Table 3: ማጠቃለያ (Summary)</button>
+            </div>
+
+            <!-- TAB 1: CARS TABLE -->
+            <div id="carsTab">
+                <button onclick="document.getElementById('addCarModal').style.display='flex'" style="background: var(--success); color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 10px;">➕ አዲስ መኪና መዝግብ</button>
+                
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ፎቶ</th>
+                                <th>የመኪና ስም</th>
+                                <th>ዓይነት</th>
+                                <th>ዋጋ (ብር)</th>
+                                <th>እርምጃ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="carsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 2: ORDERS TABLE -->
+            <div id="ordersTab" style="display: none;">
+                <h3>የደንበኞች የቀረቡ ትዕዛዞች ሰንጠረዥ</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ደንበኛ</th>
+                                <th>ስልክ</th>
+                                <th>የታዘዘው መኪና</th>
+                                <th>ከተማ</th>
+                                <th>ሁኔታ (Status)</th>
+                                <th>እርምጃ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 3: ANALYTICS TABLE -->
+            <div id="analyticsTab" style="display: none;">
+                <h3>የሲስተም አጠቃላይ ማጠቃለያ (Summary Table)</h3>
+                <table style="min-width: 100%;">
+                    <tr><th>ጠቅላላ በስቶክ ያሉ መኪኖች</th><td id="statTotalCars" style="font-weight: bold;">0</td></tr>
+                    <tr><th>ጠቅላላ የተመዘገቡ ትዕዛዞች</th><td id="statTotalOrders" style="font-weight: bold;">0</td></tr>
+                    <tr><th>አጠቃላይ የስቶክ የገንዘብ ዋጋ</th><td id="statTotalValue" style="font-weight: bold; color: var(--bf-orange);">0 ብር</td></tr>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 🔑 PIN LOGIN MODAL -->
+    <div class="modal" id="loginModal">
+        <div class="modal-box">
+            <h3 style="margin-top: 0;">🔑 የአድሚን ይለፍ ቃል ያስገቡ</h3>
+            <p style="font-size: 12px; color: #64748b;">(የመጀመሪያው የይለፍ ቃል: <b>1234</b> ነው)</p>
+            <input type="password" id="adminPin" placeholder="PIN ያስገቡ..." style="margin-bottom: 10px;">
+            <button onclick="verifyPin()" style="width: 100%; background: var(--bf-orange); color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer;">ግባ (Login)</button>
+        </div>
+    </div>
+
+    <!-- ➕ ADD CAR MODAL -->
+    <div class="modal" id="addCarModal">
+        <div class="modal-box">
+            <h3 style="margin-top: 0;">➕ አዲስ መኪና መመዝገቢያ Table</h3>
+            <form onsubmit="saveNewCar(event)">
+                <input type="text" id="cName" placeholder="የመኪና ስም (ለምሳሌ: Toyota RAV4)" required style="margin-bottom: 8px;">
+                <input type="number" id="cPrice" placeholder="ዋጋ (ብር)" required style="margin-bottom: 8px;">
+                <select id="cType" style="margin-bottom: 8px;">
+                    <option value="SUV">SUV</option>
+                    <option value="Sedan">Sedan</option>
+                    <option value="Van">Van</option>
+                    <option value="EV">EV</option>
+                </select>
+                <input type="text" id="cImg" placeholder="የምስል ሊንክ (Image URL)" style="margin-bottom: 12px;">
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" onclick="document.getElementById('addCarModal').style.display='none'" style="flex:1; background:#ccc; border:none; padding:10px; border-radius:4px; font-weight:bold;">ሰርዝ</button>
+                    <button type="submit" style="flex:2; background:var(--success); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">መዝግብ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 📝 ORDER INQUIRY MODAL -->
+    <div class="modal" id="orderModal">
+        <div class="modal-box">
+            <h3 id="orderModalTitle" style="margin-top: 0; color: var(--bf-orange);"></h3>
+            <form onsubmit="submitCustomerOrder(event)">
+                <input type="hidden" id="orderCarId">
+                <input type="text" id="ordName" placeholder="ሙሉ ስም" required style="margin-bottom: 8px;">
+                <input type="tel" id="ordPhone" placeholder="ስልክ ቁጥር (09...)" required style="margin-bottom: 8px;">
+                <input type="text" id="ordCity" placeholder="የሚረከቡበት ከተማ" required style="margin-bottom: 12px;">
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" onclick="document.getElementById('orderModal').style.display='none'" style="flex:1; background:#ccc; border:none; padding:10px; border-radius:4px; font-weight:bold;">ተመለስ</button>
+                    <button type="submit" style="flex:2; background:var(--bf-orange); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">ትዕዛዝ ላክ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 🗄️ 1. MULTI-TABLE DATABASE ENGINE (In-App Local Persistence)
+        const DEFAULT_CARS = [
+            { id: 1, name: 'Toyota RAV4 Hybrid 2024', price: 4800000, type: 'SUV', img: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=400' },
+            { id: 2, name: 'KIA Sportage 2021', price: 3600000, type: 'SUV', img: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400' },
+            { id: 3, name: 'Toyota HiRoof High Top', price: 4200000, type: 'Van', img: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400' },
+            { id: 4, name: 'Wuling Electric Mini EV', price: 1800000, type: 'EV', img: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400' }
+        ];
+
+        let cars = JSON.parse(localStorage.getItem('db_cars')) || DEFAULT_CARS;
+        let orders = JSON.parse(localStorage.getItem('db_orders')) || [
+            { id: 101, car_name: 'Toyota RAV4 Hybrid', customer_name: 'ተስፋዬ በቀለ', phone: '0911223344', city: 'ጅግጅጋ', status: 'Pending' }
+        ];
+
+        function syncDB() {
+            localStorage.setItem('db_cars', JSON.stringify(cars));
+            localStorage.setItem('db_orders', JSON.stringify(orders));
+            renderStock();
+            renderAdminTables();
+        }
+
+        // 🚗 2. CUSTOMER VIEW LOGIC
+        function renderStock(list = cars) {
+            const grid = document.getElementById('stockGrid');
+            grid.innerHTML = '';
+            
+            if(list.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 20px;">ምንም መኪና አልተገኘም</div>';
+                return;
+            }
+
+            list.forEach(c => {
+                grid.innerHTML += `
+                    <div class="car-card">
+                        <img src="${c.img || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400'}" class="car-img" alt="${c.name}">
+                        <div class="car-info">
+                            <div class="car-name">${c.name}</div>
+                            <div class="car-price">${Number(c.price).toLocaleString()} ብር</div>
+                            <button class="btn-inquire" onclick="openOrderModal(${c.id})">አዝዝ (Order)</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function filterStock() {
+            const key = document.getElementById('custSearch').value.toLowerCase();
+            const type = document.getElementById('custType').value;
+            const price = parseFloat(document.getElementById('custPrice').value) || Infinity;
+
+            const filtered = cars.filter(c => {
+                return c.name.toLowerCase().includes(key) &&
+                       (type === '' || c.type === type) &&
+                       (c.price <= price);
+            });
+            renderStock(filtered);
+        }
+
+        function openOrderModal(carId) {
+            const car = cars.find(c => c.id === carId);
+            document.getElementById('orderCarId').value = car.id;
+            document.getElementById('orderModalTitle').innerText = 'ማዘዣ፡ ' + car.name;
+            document.getElementById('orderModal').style.display = 'flex';
+        }
+
+        function submitCustomerOrder(e) {
+            e.preventDefault();
+            const carId = parseInt(document.getElementById('orderCarId').value);
+            const car = cars.find(c => c.id === carId);
+
+            const newOrder = {
+                id: Date.now(),
+                car_name: car.name,
+                customer_name: document.getElementById('ordName').value,
+                phone: document.getElementById('ordPhone').value,
+                city: document.getElementById('ordCity').value,
+                status: 'Pending'
+            };
+
+            orders.unshift(newOrder);
+            syncDB();
+            document.getElementById('orderModal').style.display = 'none';
+            alert('ትዕዛዝዎ በተሳካ ሁኔታ ተመዝግቧል! በአድሚን ገጽ ላይ ይታያል።');
+            e.target.reset();
+        }
+
+        // ⚙️ 3. ADMIN PANEL LOGIC
+        let isAdminLoggedIn = false;
+
+        function toggleView() {
+            if (!isAdminLoggedIn) {
+                document.getElementById('loginModal').style.display = 'flex';
+            } else {
+                isAdminLoggedIn = false;
+                document.getElementById('adminView').style.display = 'none';
+                document.getElementById('customerView').style.display = 'block';
+                document.getElementById('toggleViewBtn').innerText = '🔑 የአድሚን ገጽ';
+            }
+        }
+
+        function verifyPin() {
+            const pin = document.getElementById('adminPin').value;
+            if (pin === '1234') {
+                isAdminLoggedIn = true;
+                document.getElementById('loginModal').style.display = 'none';
+                document.getElementById('customerView').style.display = 'none';
+                document.getElementById('adminView').style.display = 'block';
+                document.getElementById('toggleViewBtn').innerText = '🚗 ወደ ደንበኛ ገጽ ተመለስ';
+                renderAdminTables();
+            } else {
+                alert('የተሳሳተ PIN ነው! (ትክክለኛው: 1234)');
+            }
+            document.getElementById('adminPin').value = '';
+        }
+
+        function switchTab(tabId) {
+            document.getElementById('carsTab').style.display = 'none';
+            document.getElementById('ordersTab').style.display = 'none';
+            document.getElementById('analyticsTab').style.display = 'none';
+
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.getElementById(tabId).style.display = 'block';
+        }
+
+        function renderAdminTables() {
+            // Table 1: Cars Body
+            const cBody = document.getElementById('carsTableBody');
+            cBody.innerHTML = '';
+            let totalVal = 0;
+
+            cars.forEach((c, idx) => {
+                totalVal += Number(c.price);
+                cBody.innerHTML += `
+                    <tr>
+                        <td><img src="${c.img}" style="width:40px; height:30px; object-fit:cover; border-radius:3px;"></td>
+                        <td><b>${c.name}</b></td>
+                        <td>${c.type}</td>
+                        <td>${Number(c.price).toLocaleString()} ብር</td>
+                        <td>
+                            <button class="btn-action btn-del" onclick="deleteCar(${idx})">🗑️ አጥፋ</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            // Table 2: Orders Body
+            const oBody = document.getElementById('ordersTableBody');
+            oBody.innerHTML = '';
+            orders.forEach((o, idx) => {
+                const badgeClass = o.status === 'Pending' ? 'badge-pending' : 'badge-approved';
+                oBody.innerHTML += `
+                    <tr>
+                        <td><b>${o.customer_name}</b></td>
+                        <td><a href="tel:${o.phone}" style="color:var(--bf-orange); text-decoration:none;">📞 ${o.phone}</a></td>
+                        <td>${o.car_name}</td>
+                        <td>${o.city}</td>
+                        <td><span class="badge ${badgeClass}">${o.status}</span></td>
+                        <td>
+                            <button class="btn-action btn-status" onclick="toggleOrderStatus(${idx})">ሁኔታ ቀይር</button>
+                            <button class="btn-action btn-del" onclick="deleteOrder(${idx})">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            // Table 3: Summary Analytics
+            document.getElementById('statTotalCars').innerText = cars.length + ' መኪኖች';
+            document.getElementById('statTotalOrders').innerText = orders.length + ' ትዕዛዞች';
+            document.getElementById('statTotalValue').innerText = totalVal.toLocaleString() + ' ብር';
+        }
+
+        function saveNewCar(e) {
+            e.preventDefault();
+            const newCar = {
+                id: Date.now(),
+                name: document.getElementById('cName').value,
+                price: parseFloat(document.getElementById('cPrice').value),
+                type: document.getElementById('cType').value,
+                img: document.getElementById('cImg').value || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400'
+            };
+            cars.unshift(newCar);
+            syncDB();
+            document.getElementById('addCarModal').style.display = 'none';
+            alert('መኪናው ወደ Table 1 ገብቷል!');
+            e.target.reset();
+        }
+
+        function deleteCar(idx) {
+            if (confirm('ይህንን መኪና ከዳታቤዝ ውስጥ ማጥፋት ይፈልጋሉ?')) {
+                cars.splice(idx, 1);
+                syncDB();
+            }
+        }
+
+        function toggleOrderStatus(idx) {
+            orders[idx].status = orders[idx].status === 'Pending' ? 'Approved' : 'Pending';
+            syncDB();
+        }
+
+        function deleteOrder(idx) {
+            if (confirm('ትዕዛዙን ማጥፋት ይፈልጋሉ?')) {
+                orders.splice(idx, 1);
+                syncDB();
+            }
+        }
+
+        // Launch
+        syncDB();
+    </script>
+</body>
+</html>
